@@ -278,6 +278,27 @@ def internal_error(error):
 # MAIN ENTRY POINT
 # ============================================================================
 
+@app.route("/", methods=["GET"])
+def index():
+    """Root endpoint: give a short API description and available endpoints."""
+    return jsonify({
+        "message": "Portfolio API — use /health or /api/projetos",
+        "endpoints": ["/health", "/api/projetos", "/api/certificados", "/api/visitas"]
+    }), 200
+
+
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    # Respect environment variables for production vs development
+    flask_env = os.getenv("FLASK_ENV", "development")
+    flask_debug_raw = os.getenv("FLASK_DEBUG", "False")
+    flask_debug = str(flask_debug_raw).lower() in ("1", "true", "yes")
+
+    # Warn if running with default admin password
+    if ADMIN_PASSWORD == "admin123":
+        print("WARNING: ADMIN_PASSWORD is set to the default 'admin123'. Change it in production!", flush=True)
+
+    if flask_env == "production":
+        print("FLASK_ENV=production detected. Recommended to run with a WSGI server (e.g. gunicorn).", flush=True)
+
+    app.run(debug=flask_debug, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
 
