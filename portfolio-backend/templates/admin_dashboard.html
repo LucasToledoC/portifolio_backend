@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Portfólio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Portfolio Admin</h1>
+                <p class="version">v1.0</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#projetos" class="nav-item active" data-section="projetos">
+                    <span class="icon">📁</span>
+                    <span>Projetos</span>
+                </a>
+                <a href="#certificados" class="nav-item" data-section="certificados">
+                    <span class="icon">🎓</span>
+                    <span>Certificados</span>
+                </a>
+                <a href="#visitas" class="nav-item" data-section="visitas">
+                    <span class="icon">👁️</span>
+                    <span>Visitas</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <form method="POST" action="/admin/logout" style="width: 100%;">
+                    <button type="submit" class="logout-btn">
+                        <span class="icon">🚪</span>
+                        <span>Sair</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-bar">
+                <h2 id="section-title">Gerenciar Projetos</h2>
+                <div class="header-actions">
+                    <button id="add-item-btn" class="btn btn-primary">+ Novo Item</button>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Projetos Section -->
+                <section id="projetos-section" class="section active">
+                    <div class="section-header">
+                        <h3>Meus Projetos</h3>
+                        <p>Gerencie seus projetos de portfólio</p>
+                    </div>
+                    <div id="projetos-list" class="items-grid">
+                        <div class="loading">Carregando projetos...</div>
+                    </div>
+                </section>
+
+                <!-- Certificados Section -->
+                <section id="certificados-section" class="section">
+                    <div class="section-header">
+                        <h3>Meus Certificados</h3>
+                        <p>Gerencie seus certificados e cursos</p>
+                    </div>
+                    <div id="certificados-list" class="items-grid">
+                        <div class="loading">Carregando certificados...</div>
+                    </div>
+                </section>
+
+                <!-- Visitas Section -->
+                <section id="visitas-section" class="section">
+                    <div class="section-header">
+                        <h3>Contador de Visitas</h3>
+                        <p>Acompanhe o número de visitantes do seu portfólio</p>
+                    </div>
+                    <div class="visits-card">
+                        <div class="visits-number" id="visits-count">0</div>
+                        <p>Visitantes no total</p>
+                        <button id="reset-visits-btn" class="btn btn-secondary">Resetar Contador</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Criar/Editar -->
+    <div id="item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Novo Projeto</h2>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
+            </div>
+
+            <form id="item-form" class="item-form">
+                <!-- Campos dinâmicos serão inseridos aqui -->
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Confirmar Exclusão</h2>
+                <button class="modal-close" aria-label="Fechar">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button id="cancel-delete-btn" class="btn btn-secondary">Cancelar</button>
+                <button id="confirm-delete-btn" class="btn btn-danger">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificação Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>
+
