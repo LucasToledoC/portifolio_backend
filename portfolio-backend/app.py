@@ -6,7 +6,7 @@ A Flask-based REST API for managing portfolio projects, certificates, and visit 
 import os
 from datetime import datetime
 from functools import wraps
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_cors import CORS
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -17,6 +17,8 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+# Minimal secret key for session support (override in production via SECRET_KEY env)
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
 # Supabase configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -278,11 +280,41 @@ def internal_error(error):
 # MAIN ENTRY POINT
 # ============================================================================
 
-@app.route("/", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
 def index():
-    """Root endpoint: give a short API description and available endpoints."""
-    # If there's an index/login template available, render it for browsers.
-    # Otherwise, keep the JSON small API description for programmatic access.
+    """Root endpoint: show login page for browsers, handle login POST, or provide a small API description.
+
+    POST: expects form field `password`. If matches ADMIN_PASSWORD, render admin dashboard.
+    GET: render `login.html` if present, otherwise return JSON description.
+    """
+    # Handle form login submission
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password and password == ADMIN_PASSWORD:
+            # Mark session as logged in and redirect to admin dashboard
+            session["logged_in"] = True
+            # Redirecting gives cleaner behavior (avoids form resubmit on refresh)
+            return redirect(url_for("admin_dashboard"))
+        else:
+            # Invalid password: show login again with error message (if template available)
+            login_path = os.path.join(app.root_path, "templates", "login.html")
+            if os.path.exists(login_path):
+                try:
+                    return render_template("login.html", error="Senha inválida"), 200
+                except Exception:
+                    pass
+            return jsonify({"error": "Senha inválida"}), 401
+        else:
+            # Invalid password: show login again with error message (if template available)
+            login_path = os.path.join(app.root_path, "templates", "login.html")
+            if os.path.exists(login_path):
+                try:
+                    return render_template("login.html", error="Senha inválida"), 200
+                except Exception:
+                    pass
+            return jsonify({"error": "Senha inválida"}), 401
+
+    # GET: render login page when available, otherwise return small JSON API description.
     template_path = os.path.join(app.root_path, "templates", "login.html")
     if os.path.exists(template_path):
         try:
@@ -295,6 +327,29 @@ def index():
         "message": "Portfolio API — use /health or /api/projetos",
         "endpoints": ["/health", "/api/projetos", "/api/certificados", "/api/visitas"]
     }), 200
+
+
+@app.route("/admin", methods=["GET"])
+def admin_dashboard():
+    """Serve the admin dashboard only when user is logged in (session flag)."""
+    if session.get("logged_in"):
+        dashboard_path = os.path.join(app.root_path, "templates", "admin_dashboard.html")
+        if os.path.exists(dashboard_path):
+            try:
+                return render_template("admin_dashboard.html"), 200
+            except Exception:
+                pass
+        # If template missing, return a minimal JSON for admin
+        return jsonify({"message": "Admin dashboard"}), 200
+    # Not logged in -> redirect to login
+    return redirect(url_for("index"))
+
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    """Clear session and redirect to login. Accepts POST from dashboard logout form."""
+    session.pop("logged_in", None)
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":
