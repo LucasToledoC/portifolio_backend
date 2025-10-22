@@ -304,15 +304,6 @@ def index():
                 except Exception:
                     pass
             return jsonify({"error": "Senha inválida"}), 401
-        else:
-            # Invalid password: show login again with error message (if template available)
-            login_path = os.path.join(app.root_path, "templates", "login.html")
-            if os.path.exists(login_path):
-                try:
-                    return render_template("login.html", error="Senha inválida"), 200
-                except Exception:
-                    pass
-            return jsonify({"error": "Senha inválida"}), 401
 
     # GET: render login page when available, otherwise return small JSON API description.
     template_path = os.path.join(app.root_path, "templates", "login.html")
