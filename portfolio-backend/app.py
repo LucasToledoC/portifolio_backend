@@ -6,7 +6,7 @@ A Flask-based REST API for managing portfolio projects, certificates, and visit 
 import os
 from datetime import datetime
 from functools import wraps
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -281,6 +281,16 @@ def internal_error(error):
 @app.route("/", methods=["GET"])
 def index():
     """Root endpoint: give a short API description and available endpoints."""
+    # If there's an index/login template available, render it for browsers.
+    # Otherwise, keep the JSON small API description for programmatic access.
+    template_path = os.path.join(app.root_path, "templates", "login.html")
+    if os.path.exists(template_path):
+        try:
+            return render_template("login.html"), 200
+        except Exception:
+            # If rendering fails for any reason, fall back to the JSON response below.
+            pass
+
     return jsonify({
         "message": "Portfolio API — use /health or /api/projetos",
         "endpoints": ["/health", "/api/projetos", "/api/certificados", "/api/visitas"]
