@@ -261,6 +261,154 @@ def increment_visits():
 
 
 # ============================================================================
+# ADMIN-PREFixed API (used by the admin dashboard JS)
+# These endpoints use session-based auth (logged_in) instead of the header-based require_auth
+# ============================================================================
+
+
+def _require_logged_in():
+    if not session.get("logged_in"):
+        return False
+    return True
+
+
+@app.route("/admin/api/projetos", methods=["GET", "POST"])
+def admin_projetos():
+    if not _require_logged_in():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if request.method == "GET":
+        try:
+            response = supabase.table("projetos").select("*").execute()
+            return jsonify(response.data), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # POST
+    try:
+        data = request.get_json()
+        required_fields = ["titulo", "descricao", "tecnologias"]
+        if not data or not all(field in data for field in required_fields):
+            return jsonify({"error": "Missing required fields"}), 400
+        data["created_at"] = datetime.utcnow().isoformat()
+        response = supabase.table("projetos").insert(data).execute()
+        return jsonify(response.data), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/api/projetos/<int:project_id>", methods=["GET", "PUT", "DELETE"])
+def admin_projeto_detail(project_id):
+    if not _require_logged_in():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        if request.method == "GET":
+            response = supabase.table("projetos").select("*").eq("id", project_id).execute()
+            if not response.data:
+                return jsonify({"error": "Project not found"}), 404
+            return jsonify(response.data[0]), 200
+
+        if request.method == "PUT":
+            data = request.get_json()
+            data["updated_at"] = datetime.utcnow().isoformat()
+            response = supabase.table("projetos").update(data).eq("id", project_id).execute()
+            if not response.data:
+                return jsonify({"error": "Project not found"}), 404
+            return jsonify(response.data[0]), 200
+
+        if request.method == "DELETE":
+            response = supabase.table("projetos").delete().eq("id", project_id).execute()
+            return jsonify({"message": "Project deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/api/certificados", methods=["GET", "POST"])
+def admin_certificados():
+    if not _require_logged_in():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if request.method == "GET":
+        try:
+            origem = request.args.get("origem")
+            if origem:
+                response = supabase.table("certificados").select("*").eq("origem", origem).execute()
+            else:
+                response = supabase.table("certificados").select("*").execute()
+            return jsonify(response.data), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # POST
+    try:
+        data = request.get_json()
+        required_fields = ["nome", "instituicao", "data_conclusao"]
+        if not data or not all(field in data for field in required_fields):
+            return jsonify({"error": "Missing required fields"}), 400
+        data["created_at"] = datetime.utcnow().isoformat()
+        response = supabase.table("certificados").insert(data).execute()
+        return jsonify(response.data), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/api/certificados/<int:cert_id>", methods=["GET", "PUT", "DELETE"])
+def admin_certificado_detail(cert_id):
+    if not _require_logged_in():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        if request.method == "GET":
+            response = supabase.table("certificados").select("*").eq("id", cert_id).execute()
+            if not response.data:
+                return jsonify({"error": "Certificate not found"}), 404
+            return jsonify(response.data[0]), 200
+
+        if request.method == "PUT":
+            data = request.get_json()
+            data["updated_at"] = datetime.utcnow().isoformat()
+            response = supabase.table("certificados").update(data).eq("id", cert_id).execute()
+            if not response.data:
+                return jsonify({"error": "Certificate not found"}), 404
+            return jsonify(response.data[0]), 200
+
+        if request.method == "DELETE":
+            response = supabase.table("certificados").delete().eq("id", cert_id).execute()
+            return jsonify({"message": "Certificate deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/api/visitas", methods=["GET", "POST"])
+def admin_visitas():
+    # visits endpoint is available to admin dashboard (session) as well
+    if not _require_logged_in():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        if request.method == "GET":
+            response = supabase.table("visitas").select("total").execute()
+            if response.data:
+                return jsonify({"total": response.data[0]["total"]}), 200
+            else:
+                return jsonify({"total": 0}), 200
+
+        # POST (increment)
+        response = supabase.table("visitas").select("*").execute()
+        if response.data:
+            current_total = response.data[0]["total"]
+            new_total = current_total + 1
+            supabase.table("visitas").update({"total": new_total}).eq("id", response.data[0]["id"]).execute()
+            return jsonify({"total": new_total}), 200
+        else:
+            supabase.table("visitas").insert({"total": 1}).execute()
+            return jsonify({"total": 1}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================================================
 # ERROR HANDLERS
 # ============================================================================
 
